@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#101716">
+  <meta name="color-scheme" content="dark">
+  <title>Codex Remote · 聊天</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/vendor/marked/marked.umd.js" defer></script>
+  <script src="/vendor/dompurify/purify.min.js" defer></script>
+  <script src="/compatibility.js" defer></script>
+  <script src="/address.js" defer></script>
+  <script src="/legal.js" defer></script>
+  <script src="/consent-store.js" defer></script>
+  <script src="/runtime.js" defer></script>
+  <script src="/services.js" defer></script>
+  <script src="/distribution.js" defer></script>
+  <script src="/privacy.js" defer></script>
+  <script src="/tooltips.js" defer></script>
+  <script src="/connections.js" defer></script>
+  <script src="/tailnet.js" defer></script>
+  <script src="/deploy.js" defer></script>
+  <script src="/connect.js" defer></script>
+  <script src="/user-message.js" defer></script>
+  <script src="/rich.js" defer></script>
+  <script src="/models.js" defer></script>
+  <script src="/permissions.js" defer></script>
+  <script src="/live.js" defer></script>
+  <script src="/app.js" defer></script>
+  <script src="/local-service.js" defer></script>
+</head>
+<body>
+  <section id="connections-screen" class="connections-screen" hidden aria-label="电脑连接">
+    <header class="connections-header"><div class="computer-title"><button type="button" class="computer-switch" data-client-only data-connections hidden aria-label="切换电脑" aria-haspopup="dialog" aria-controls="computer-switcher" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></button><h1>我的电脑</h1></div></header>
+    <p id="local-service-note" class="fine" role="status"></p>
+    <button id="local-service-retry" type="button" hidden>重新启动本机服务</button>
+    <div id="connections-list" class="connections-list"></div>
+    <p id="connections-empty" hidden></p>
+    <button id="add-computer" type="button" class="add-computer">＋ 添加新电脑</button>
+    <button type="button" data-privacy>用户协议与隐私政策</button>
+    <p id="connections-note" class="fine" role="status"></p>
+  </section>
+  <dialog id="add-computer-dialog" class="computer-dialog" aria-labelledby="add-computer-title">
+    <header class="computer-dialog-header"><h2 id="add-computer-title">添加新电脑</h2><button id="add-computer-close" type="button" aria-label="关闭添加电脑">×</button></header>
+    <form id="connect-computer-form" class="connect-computer-form">
+      <label for="computer-address">电脑</label>
+      <input id="computer-address" required placeholder="选择电脑，或输入 IP / 主机名" autocomplete="off" autocapitalize="none" spellcheck="false" autofocus aria-controls="computer-options">
+      <ul id="computer-options" class="computer-suggestions" aria-label="发现的电脑" hidden></ul>
+      <button id="connect-computer-submit" type="submit">连接</button>
+    </form>
+    <p id="install-target" class="connection-target" hidden></p>
+    <p id="connect-computer-status" class="fine" role="status"></p>
+    <section id="trust-change" hidden>
+      <p>服务器身份已改变。只有确认服务端重装或重置了密钥后，才重新信任；此操作会清除当前登录会话。</p>
+      <button type="button" id="trust-reset">确认服务器已重置，重新信任</button>
+      <p id="trust-reset-status" role="status"></p>
+    </section>
+    <details id="connection-discovery-help"><summary>找不到目标电脑？</summary>
+      <p id="connection-network-help" class="fine">请让两台电脑登录同一 Tailscale 网络，保持目标在线。设备能否互访还取决于管理员的访问规则。安装完成后点击“重新检查”。也可以在上方输入内网地址连接。</p>
+      <details id="tailnet-settings"><summary>网络连接设置</summary>
+        <div id="tailscale-discovery">
+          <p id="tailscale-note" class="fine" role="status">正在检测 Tailscale…</p>
+          <div class="connection-form-actions"><button id="tailscale-refresh" type="button">重新检查</button><button id="tailscale-setup" type="button" hidden>安装 Tailscale</button><button id="tailscale-mode" type="button" hidden>使用内嵌网络</button></div>
+        </div>
+      </details>
+    </details>
+    <section id="compatibility-guide" class="install-package-guide" hidden aria-label="版本兼容性检查">
+      <p id="compatibility-note" class="fine" role="status"></p>
+      <p id="compatibility-client-help" class="fine" hidden>网页客户端：在运行网页服务的电脑更新 Codex Remote 项目和服务包并重启，再刷新本页。桌面客户端：在当前设备安装符合上方兼容范围的新版客户端。目标电脑的 SSH 重装无法更新当前客户端。</p>
+      <button id="compatibility-retry" type="button">重新检查版本</button>
+      <button id="compatibility-back" type="button" class="quiet">返回修改地址</button>
+    </section>
+    <section id="computer-install-guide" hidden>
+      <div id="ssh-bootstrap-guide" hidden>
+        <p id="ssh-bootstrap-note" class="fine"></p>
+      </div>
+      <p id="target-client-install-note" class="fine">请在目标电脑上单独下载并安装 Codex Remote 客户端，打开客户端并启动服务后，再回到这里重试连接。</p>
+      <div id="install-ssh-check" hidden>
+        <label for="install-ssh-port">SSH 端口</label>
+        <input id="install-ssh-port" type="number" min="1" max="65535" value="22">
+        <button id="install-ssh-retry" type="button">重新检测 SSH</button>
+      </div>
+      <p id="install-progress" class="fine" role="status"></p>
+      <button id="install-retry" type="button" class="quiet">已装过服务？直接重试连接</button>
+      <button id="install-back" type="button" class="quiet">返回修改地址</button>
+    </section>
+    <div id="computer-install-details" hidden>
+    <section id="ssh-deployment" class="connection-profile-form" hidden>
+      <p class="fine">使用 SSH 启动目标电脑已安装的服务。目标需开启 SSH，并已安装客户端。</p>
+      <form id="ssh-form">
+        <label for="ssh-target">电脑地址</label><input id="ssh-target" required maxlength="200" placeholder="192.168.1.20 或电脑的 Tailscale 名称" autocapitalize="none" spellcheck="false">
+        <label for="ssh-mode">连接方式</label><select id="ssh-mode"><option value="password">账号密码</option><option value="tailscale">Tailscale SSH（免密码）</option><option value="key">SSH 密钥</option></select>
+        <label for="ssh-user">电脑用户名</label><input id="ssh-user" placeholder="登录目标电脑的账号" autocomplete="username" autocapitalize="none" spellcheck="false">
+        <p id="ssh-account-note" class="fine"></p>
+        <button id="ssh-account-forget" type="button" class="quiet" hidden>忘记此电脑的用户名</button>
+        <div id="ssh-password-field"><label for="ssh-password">登录密码</label><input id="ssh-password" type="password" autocomplete="off" required placeholder="仅本次连接使用，不保存"></div>
+        <p id="ssh-mode-help" class="fine"></p>
+        <details id="ssh-privacy" class="ssh-privacy">
+          <summary>连接凭据与数据说明</summary>
+          <p id="ssh-key-location" class="fine" hidden></p>
+          <p id="ssh-credential-privacy" class="fine"></p>
+          <p class="fine">SSH 连接流程不向开发者上传密码或私钥。连接名称和地址保存在当前设备；目标电脑可能保留 SSH 登录及操作日志。</p>
+          <p id="ssh-trust-storage" class="fine"></p>
+        </details>
+        <details><summary>高级设置</summary><label for="ssh-port">SSH 端口</label><input id="ssh-port" type="number" min="1" max="65535" placeholder="默认 22，密钥模式沿用 SSH 配置"></details>
+        <button id="ssh-probe" type="submit">连接并启动</button>
+      </form>
+      <p id="ssh-preview" class="fine"></p>
+      <p id="ssh-note" class="fine" role="status">启动已安装的服务并保存连接，不会安装或替换目标程序。</p>
+      <button id="ssh-connect-retry" type="button" hidden>重试连接</button>
+    </section>
+    <button id="install-details-back" type="button" class="quiet">返回修改地址</button>
+    </div>
+    <p id="add-computer-note" class="fine" role="status"></p>
+  </dialog>
+  <dialog id="computer-switcher" class="computer-switcher" aria-labelledby="computer-switcher-title">
+    <header class="computer-dialog-header"><h2 id="computer-switcher-title">我的电脑</h2><button id="computer-switcher-close" type="button" aria-label="关闭电脑列表">×</button></header>
+    <div id="computer-switcher-list"></div>
+    <p id="computer-switcher-note" class="fine" role="status"></p>
+    <button id="computer-switcher-add" type="button" class="add-computer">＋ 添加新电脑</button>
+  </dialog>
+  <section id="login" class="login" hidden>
+    <header class="login-machine-header">
+      <button id="login-machine-switch" type="button" class="login-machine-switch" data-connections aria-label="切换电脑" aria-haspopup="dialog" aria-controls="computer-switcher" aria-expanded="false">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+        <span class="login-machine-text"><strong id="login-machine-name"></strong><span id="login-machine-address" class="fine"></span></span>
+        <span aria-hidden="true">⌄</span>
+      </button>
+    </header>
+    <form id="login-form" class="login-card">
+      <h1 id="login-title">连接电脑</h1>
+      <label for="token" hidden>访问口令</label>
+      <input id="token" name="token" type="password" autocomplete="current-password" hidden maxlength="256" placeholder="粘贴访问口令">
+      <button type="submit" class="primary"><span id="login-submit-label">重新连接</span> <span aria-hidden="true">↗</span></button>
+      <p id="login-error" class="error" role="alert"></p>
+      <button type="button" class="quiet" data-client-only data-connections hidden>选择其他电脑</button>
+    </form>
+  </section>
+
+  <div id="app" class="shell" hidden>
+    <aside id="sidebar" class="sidebar" aria-label="聊天列表">
+      <header class="brand"><button type="button" class="computer-switch" data-client-only data-connections hidden aria-label="切换电脑" aria-haspopup="dialog" aria-controls="computer-switcher" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></button><span class="brand-mark small" aria-hidden="true">C<span>↗</span></span><div class="connection-brand"><strong id="connection-name">Codex Remote</strong><span id="connection-address" class="fine"></span></div><span class="read-only">只读</span></header>
+      <div class="connection"><span id="dot" class="dot"></span><span id="connection-label" role="status">正在连接</span></div>
+      <div class="controls">
+        <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="查找聊天" aria-label="按标题或项目查找聊天" autocomplete="off"></label>
+        <div class="list-toolbar"><h2>聊天记录 <span id="thread-count">0</span></h2><label class="archive"><input id="archive" type="checkbox">已归档</label></div>
+      </div>
+      <nav id="threads" class="thread-list" aria-label="选择聊天"></nav>
+      <p id="list-empty" class="empty-note" hidden>这里还没有聊天。<br>在电脑上开始一段 Codex 对话后刷新。</p>
+      <footer class="sidebar-footer">
+        <div class="footer-actions"><button id="refresh" type="button">↻ 刷新</button><button type="button" data-open-settings aria-haspopup="dialog" aria-controls="settings-dialog">设置</button><button id="logout" type="button" class="quiet">断开</button></div>
+
+      </footer>
+    </aside>
+
+    <main id="reader" class="reader">
+      <div id="welcome" class="welcome"><span class="welcome-symbol" aria-hidden="true">↗</span><h1>接着看，慢慢读。</h1><p>选择一段电脑上的聊天。<br>新消息会在保存后出现在这里。</p><span class="fine">无需让手机保持常亮</span></div>
+      <section id="conversation" class="conversation" hidden aria-label="聊天内容">
+        <header class="reader-header"><button id="back" type="button" class="back" aria-label="返回聊天列表">‹</button><button type="button" class="computer-switch" data-client-only data-connections hidden aria-label="切换电脑" aria-haspopup="dialog" aria-controls="computer-switcher" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg></button><div class="reader-heading"><span id="reader-connection-name" class="reader-connection-name"></span><h1 id="chat-title"></h1><p id="chat-meta"></p></div><button type="button" class="reader-settings" data-open-settings aria-haspopup="dialog" aria-controls="settings-dialog">设置</button><button id="live-refresh" type="button" aria-label="同步审批权限和模型选择列表" title="同步审批权限和模型选择列表"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h14l-3-3m5 13H6l3 3M18 7l-3 3M6 17l3-3"/></svg></button><button id="chat-refresh" type="button" aria-label="刷新此聊天" title="刷新此聊天">↻</button></header>
+        <div id="scroll" class="scroll">
+          <div class="history-bar"><button id="older" type="button" hidden>加载更早消息</button></div>
+          <p id="limit-note" class="notice" hidden>为节省资源，仅保留部分文字历史；完整内容请在电脑查看。</p>
+          <div id="messages" class="messages" aria-label="消息"></div>
+          <p id="message-empty" class="empty-note" hidden>暂时没有已保存的文字消息。</p>
+        </div>
+        <form id="composer" class="composer" hidden>
+          <div id="approval-panel" class="approval-panel" hidden aria-label="等待批准"></div>
+          <span id="live-status" class="fine" role="status" hidden></span>
+          <div id="queue-status" class="queue-status" hidden></div>
+          <div id="image-drafts" class="image-drafts" aria-label="待发送图片" hidden></div>
+          <input id="image-picker" type="file" multiple hidden>
+          <div class="compose-row"><textarea id="prompt" rows="1" placeholder="给电脑上的 Codex 发消息…" aria-label="发送到这个聊天" aria-describedby="send-note"></textarea><button id="stop-turn" type="button" hidden aria-label="停止回答" title="停止当前回答">■</button><button id="send" type="submit" aria-label="发送消息，默认排队" title="发送（默认排队）">发送</button></div>
+          <div class="composer-tools"><div class="image-toolbar"><button id="add-images" type="button" aria-label="添加图片或文件" title="添加图片或文件（最多 4 个，每个 8 MiB）">＋</button><span id="image-note" class="fine" role="status" hidden></span></div><button id="permission-select" type="button" hidden aria-label="会话访问权限" aria-haspopup="menu" aria-controls="permission-menu" aria-expanded="false" title="修改当前会话后续轮次的访问权限"><span id="permission-trigger-icon" aria-hidden="true"></span><span id="permission-trigger-label"></span></button><button id="model-picker-open" type="button" aria-haspopup="dialog" aria-controls="model-dialog" title="设置当前聊天下一轮的模型">模型待同步 <span aria-hidden="true">⌄</span></button></div>
+
+          <div id="send-status" class="send-status" hidden><span id="send-note" role="status"></span><button id="check-send" type="button" hidden>查询送达状态</button><button id="dismiss-send" type="button" hidden>已核对，关闭提示</button></div>
+        </form>
+        <div class="reader-footer"><span id="sync-label" role="status">已保存的消息</span><button id="latest" type="button" hidden>↓ 回到最新</button></div>
+      </section>
+    </main>
+    <div id="error" class="toast" role="alert" hidden></div>
+  </div>
+  <noscript>请启用 JavaScript 以连接电脑并查看聊天。</noscript>
+  <dialog id="model-dialog" class="model-dialog" aria-labelledby="model-title">
+    <span id="model-title" hidden>模型设置</span>
+    <header class="model-picker-header">
+      <button id="model-fast" type="button" aria-label="Fast 模式" aria-pressed="false" title="Fast 模式"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 2.5 4 14h7l-.5 7.5L20 10h-7z"/></svg></button>
+      <div class="model-center"><strong id="model-effort-name">—</strong><span id="model-current" class="model-current" hidden></span></div>
+      <button id="model-reset" type="button" aria-label="恢复当前模型的默认设置" title="恢复当前模型的默认设置"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 9a8 8 0 1 1 0 6M4 4v5h5"/></svg></button>
+      <button id="model-close" type="button" aria-label="关闭模型设置" hidden>×</button>
+    </header>
+    <div id="model-efforts" class="model-efforts" role="group" aria-label="思考深度"></div>
+    <p id="model-description" class="fine" hidden></p>
+    <p id="model-fast-note" class="fine" hidden></p>
+    <p id="model-note" class="fine" role="status" hidden></p>
+    <button id="model-retry" type="button" hidden>重新读取</button>
+  </dialog>
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <header class="settings-header"><button id="settings-back" type="button" aria-label="返回上一级" hidden>‹</button><h2 id="settings-title" tabindex="-1">设置</h2><button id="settings-close" type="button" aria-label="关闭设置" autofocus>×</button></header>
+    <section data-settings-view="home">
+      <button type="button" class="settings-computer" data-settings-page="connection"><svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg><span><strong id="settings-computer-name">未连接电脑</strong><small id="settings-computer-address"></small></span><span class="setting-chevron" aria-hidden="true">›</span></button>
+      <h3 class="setting-section-title">使用偏好</h3><div class="setting-group"><div class="setting-row setting-preference"><svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h1m3 0h1m3 0h1m3 0h1M6 12h1m3 0h1m3 0h1m3 0h1M7 16h10"/></svg><label for="send-shortcut">发送快捷键</label><select id="send-shortcut"><option value="enter">回车发送</option><option value="ctrl-enter">Control + 回车</option></select><span class="setting-chevron" aria-hidden="true">⌄</span></div><div class="setting-row setting-preference"><svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></svg><label for="mode">更新方式</label><select id="mode"><option value="auto">自动 · 仅前台</option><option value="manual">手动 · 更省电</option></select><span class="setting-chevron" aria-hidden="true">⌄</span></div><div class="setting-row setting-preference"><svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V5a2 2 0 0 1 3-2Z"/></svg><label for="open-position">打开会话</label><select id="open-position"><option value="latest">最新消息</option><option value="remember">恢复阅读位置</option></select><span class="setting-chevron" aria-hidden="true">⌄</span></div></div>
+      <p id="send-shortcut-hint" class="setting-help fine">Shift + 回车换行</p>
+      <h3 class="setting-section-title">连接与维护</h3><div class="setting-group"><button type="button" class="setting-row" data-settings-page="connection"><svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 14 4-4M8 16l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m2 10a4 4 0 0 0 6 0l4-4a4 4 0 0 0-6-6l-1 1"/></svg><span class="setting-label">连接管理<small>名称、服务与 SSH</small></span><span class="setting-chevron" aria-hidden="true">›</span></button><button type="button" class="setting-row" data-settings-page="about"><svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></svg><span class="setting-label">关于</span><span class="setting-chevron" aria-hidden="true">›</span></button></div>
+      <p id="input-settings-note" class="setting-help fine" role="status">设置自动保存到当前设备</p>
+    </section>
+    <section data-settings-view="connection" hidden>
+      <div id="connection-settings">
+        <h3 class="setting-section-title">电脑</h3><div class="setting-group">
+          <div class="setting-row"><span class="setting-label">电脑名称</span><span id="settings-machine-name" class="setting-value">未连接</span></div>
+          <button type="button" class="setting-row" data-settings-page="alias"><span class="setting-label">连接别名</span><span id="settings-alias" class="setting-value">未设置</span><span class="setting-chevron" aria-hidden="true">›</span></button>
+          <div class="setting-row"><span class="setting-label">地址</span><span id="settings-address" class="setting-value"></span></div>
+        </div><p id="connection-identity" hidden></p><p class="setting-help fine">别名仅在当前设备显示</p>
+        <div id="guardian-controls" hidden><h3 class="setting-section-title">服务</h3><div class="setting-group">
+          <button id="guardian-status" type="button" class="setting-row"><svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="m15 15 6 6"/></svg><span class="setting-label">检查服务</span><span class="setting-chevron" aria-hidden="true">›</span></button>
+          <button id="guardian-restart" type="button" class="setting-row"><svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></svg><span class="setting-label">重启服务</span><span class="setting-chevron" aria-hidden="true">›</span></button>
+        </div><div id="guardian-restart-confirm" class="settings-restart-confirm" hidden>
+          <p class="fine">重启会暂时中断连接，不会重启电脑或 Codex。是否继续？</p>
+          <div><button id="guardian-restart-accept" type="button">确认重启</button><button id="guardian-restart-cancel" type="button" class="quiet">取消</button></div>
+        </div><p id="guardian-note" class="setting-help fine" role="status"></p></div>
+      </div>
+      <div data-distribution-capability="sshDeploy" hidden>
+      <h3 class="setting-section-title">SSH</h3><div class="setting-group"><button type="button" class="setting-row" data-settings-page="ssh"><svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="15" cy="8" r="5"/><path d="m11 12-8 8v-4l5-5"/></svg><span class="setting-label">免密连接</span><span class="setting-chevron" aria-hidden="true">›</span></button><button type="button" class="setting-row" data-settings-page="fingerprints"><svg class="setting-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6m-6 4h6m-6 4h3"/></svg><span class="setting-label">主机身份指纹</span><span class="setting-chevron" aria-hidden="true">›</span></button></div><p class="setting-help fine">配置时再填写账号与密码</p>
+      </div>
+    </section>
+    <section data-settings-view="alias" class="settings-fields" hidden>
+      <label for="connection-name-input">连接别名</label><input id="connection-name-input" type="text" maxlength="96" autocomplete="off" placeholder="使用电脑名称">
+      <p id="connection-name-help" class="fine">别名仅在当前设备显示，留空使用电脑名称。</p>
+      <div class="settings-alias-actions"><button id="connection-name-save" type="button">保存</button><button id="connection-name-reset" type="button" class="quiet">恢复电脑名称</button></div><p id="connection-alias-note" class="fine" role="status"></p>
+    </section>
+    <section data-settings-view="ssh" class="settings-fields" hidden><h3 id="ssh-settings-title" class="sr-only">免密连接</h3>
+        <p id="ssh-managed-key-note" class="fine">创建登录密钥并配置目标电脑，验证成功后可免密码连接。私钥保存在运行网页客户端的电脑上，不发送到浏览器或目标电脑；密码仅用于首次授权。</p>
+        <pre id="ssh-managed-key-list" class="fine" style="white-space:pre-wrap;overflow-wrap:anywhere">尚未配置登录密钥。</pre>
+        <form id="ssh-key-setup-form">
+         <label for="ssh-key-host">目标电脑地址</label><input id="ssh-key-host" required placeholder="100.64.10.10" autocapitalize="none" spellcheck="false">
+         <label for="ssh-key-user">电脑用户名</label><input id="ssh-key-user" required autocomplete="username" autocapitalize="none" spellcheck="false">
+         <label for="ssh-key-port">SSH 端口</label><input id="ssh-key-port" type="number" min="1" max="65535" value="22" required>
+         <label for="ssh-key-password">首次授权的登录密码</label><input id="ssh-key-password" type="password" required autocomplete="off" placeholder="仅本次使用，不保存">
+         <button id="ssh-key-create" type="submit">创建密钥并配置免密连接</button>
+        </form>
+        <p id="ssh-key-progress" class="fine" role="status"></p>
+    </section>
+    <section data-settings-view="fingerprints" class="settings-fields" hidden><p class="fine">用于确认目标电脑身份，与免密登录密钥不同。</p><pre id="ssh-settings-keys" class="fine">此客户端尚未记录 SSH 主机指纹。</pre></section>
+    <section data-settings-view="about" class="settings-about" hidden><h3 id="settings-about-title" class="sr-only">关于</h3>
+        <dl>
+          <div><dt>客户端版本</dt><dd id="about-client-version">—</dd></div>
+          <div><dt>服务端版本</dt><dd id="about-server-version">未连接</dd></div>
+          <div><dt>连接机器</dt><dd id="about-machine">未连接</dd></div>
+        </dl><button type="button" data-privacy>用户协议与隐私政策</button><p class="fine">这是独立的第三方客户端，不代表 OpenAI 官方产品。</p>    </section>
+  </dialog>
+  <dialog id="consent-dialog" class="computer-dialog legal-dialog" aria-labelledby="consent-title">
+    <h2 id="consent-title">欢迎使用 Codex Remote Client</h2>
+    <p>请先了解并确认用户协议与隐私政策。你的消息、附件和必要上下文会发送给你选择的电脑，并可能继续交给该电脑配置的 AI 服务商。</p>
+    <div id="consent-documents" class="legal-documents"></div>
+    <form id="consent-form">
+      <label class="consent-choice"><input type="checkbox" id="consent-terms">我已阅读并同意用户协议与隐私政策。</label>
+      <label class="consent-choice"><input type="checkbox" id="consent-ai">我愿意使用 AI 数据共享功能；具体接收方将单独列明，经我确认后才允许共享。</label>
+      <p class="fine">第二项可不选，仍可浏览已有会话。同一协议版本及同一接收方无需重复确认，可在设置中撤回。接收方或用途变化时会再次说明。</p>
+      <p id="consent-note" role="status"></p>
+      <div class="legal-actions"><button type="button" id="consent-decline">暂不同意</button><button id="consent-continue" type="submit" disabled>确认并继续</button></div>
+    </form>
+  </dialog>
+  <dialog id="privacy-dialog" class="computer-dialog legal-dialog" aria-labelledby="privacy-title">
+    <h2 id="privacy-title">用户协议与隐私政策</h2>
+    <div id="privacy-documents" class="legal-documents"></div>
+    <p id="privacy-consent-status" role="status"></p>
+    <button type="button" id="privacy-review">重新查看并选择许可</button>
+    <button type="button" id="privacy-revoke">撤回 AI 数据共享许可</button>
+    <form method="dialog"><button type="submit">关闭</button></form>
+  </dialog>
+  <dialog id="recipient-dialog" class="computer-dialog legal-dialog" aria-labelledby="recipient-title">
+    <h2 id="recipient-title">确认实际数据接收方</h2>
+    <p>你选择的服务器：<span id="recipient-origin"></span></p>
+    <p>除服务器管理员外，消息、附件、必要会话上下文及任务数据还可能交给以下接收方。名单由服务器管理员提供，请仅连接你信任的服务器。</p>
+    <ul id="recipient-list"></ul><p id="recipient-purpose"></p>
+    <p>拒绝不会发送本次内容。此许可保存在本机，相同服务器、接收方及用途无需重复确认。撤回不会收回已发送数据或自动取消远端任务。</p>
+    <label class="consent-choice"><input id="recipient-check" type="checkbox">我同意为上述用途向所列接收方共享数据。</label>
+    <div class="legal-actions"><button id="recipient-deny" type="button">不允许</button><button id="recipient-allow" type="button" disabled>同意并继续</button></div>
+  </dialog>
+  <dialog id="create-dialog">
+    <form id="create-form">
+      <h2>新建会话</h2><p id="create-project" class="fine"></p>
+      <label for="create-prompt">第一条消息</label>
+      <textarea id="create-prompt" rows="4" required placeholder="让 Codex 在这个项目中做什么？"></textarea>
+      <p id="create-note" class="fine" role="status">使用电脑的默认配置，在该项目目录开始。</p>
+      <div class="create-actions"><button id="create-close" type="button">关闭</button><button id="create-submit" type="submit">创建并发送</button></div>
+      <button id="create-dismiss" type="button" hidden>已核对，清除创建提示</button>
+      <button id="create-check" type="button" hidden>查询创建结果</button>
+    </form>
+  </dialog>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "codex-remote-client",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Desktop and mobile client for independent Codex Remote services",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "web": "node web/server.cjs",
+    "web:tailscale": "node web/server.cjs --tailscale",
+    "build": "tauri build",
+    "android": "tauri android",
+    "ios": "tauri ios",
+    "test": "node --test tests/*.test.cjs",
+    "dev:embedded": "tauri dev --features embedded-tailscale",
+    "build:embedded": "tauri build --features embedded-tailscale",
+    "distribution": "node ../scripts/build-distribution.cjs",
+    "build:ios:appstore": "node ../scripts/build-distribution.cjs ios-appstore --build",
+    "build:macos:appstore": "node ../scripts/build-distribution.cjs macos-appstore --build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  },
+  "dependencies": {
+    "socks": "^2.8.10",
+    "ssh2": "^1.17.0",
+    "undici": "^8.11.2"
+  }
+}

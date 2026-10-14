@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <!-- Bundled Go service includes TLS. Complete export-compliance classification before release. -->
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>用于连接你指定的局域网电脑上的 Codex Remote 服务，读取会话并发送你提交的消息和附件。</string>
+</dict></plist>

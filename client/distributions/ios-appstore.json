@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "ios-appstore",
+  "platform": "ios",
+  "channel": "appstore",
+  "branding": {
+    "productName": "Codex Remote Client"
+  },
+  "modules": {
+    "billing": "disabled",
+    "ads": "disabled",
+    "analytics": "disabled",
+    "push": "disabled"
+  },
+  "capabilities": {
+    "sshDeploy": false,
+    "systemDiscovery": false,
+    "embeddedTailscale": false,
+    "serverBundles": false,
+    "localService": false
+  },
+  "updates": "store"
+}

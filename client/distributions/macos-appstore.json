@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "macos-appstore",
+  "platform": "macos",
+  "channel": "appstore",
+  "branding": {
+    "productName": "Codex Remote Client"
+  },
+  "modules": {
+    "billing": "disabled",
+    "ads": "disabled",
+    "analytics": "disabled",
+    "push": "disabled"
+  },
+  "capabilities": {
+    "sshDeploy": false,
+    "systemDiscovery": false,
+    "embeddedTailscale": false,
+    "serverBundles": true,
+    "localService": true
+  },
+  "updates": "store"
+}

@@ -1,0 +1,22 @@
+{
+  "marked": {
+    "version": "18.0.12",
+    "source": "https://registry.npmjs.org/marked/-/marked-18.0.12.tgz",
+    "sha256": "50f7134d0f110b3db6137ac269e6a45a79b3f8cf2b902c363f4c7dd5e2afece7"
+  },
+  "dompurify": {
+    "version": "3.4.15",
+    "source": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.15.tgz",
+    "sha256": "4f5d49223fa056790019d990e5e4207166a86ac13d9ec8c73d828c63d75b34b5"
+  },
+  "katex": {
+    "version": "0.18.7",
+    "source": "https://registry.npmjs.org/katex/-/katex-0.18.7.tgz",
+    "sha256": "9a80a3fba2367e99bf67b52bfff52e9534c8c7f198e4eaa12699e4f1df9a0bda"
+  },
+  "mermaid": {
+    "version": "11.17.2",
+    "source": "https://registry.npmjs.org/mermaid/-/mermaid-11.17.2.tgz",
+    "sha256": "6ad2f42c3fc26bbf9e45cbb6d11898972573ea52b33a5f4ff51952899f950ffd"
+  }
+}

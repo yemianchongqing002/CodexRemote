@@ -1,0 +1,57 @@
+const {chromium}=require('playwright');
+const {readFileSync}=require('node:fs');
+const {resolve}=require('node:path');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{})});
+ try{
+  const page=await browser.newPage({viewport:{width:1100,height:800}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.setContent(readFileSync('client/ui/index.html','utf8').replace(/<script[\s\S]*?<\/script>/g,'').replace(/<link[^>]*>/g,''));
+  await page.addStyleTag({path:resolve('client/ui/style.css')});
+  await page.evaluate(()=>{
+   const rows=[];window.selections=[];
+   window.Runtime={native:true,hasConnection:false,profile:null,ready:Promise.resolve(),profiles:()=>rows,saveProfiles:items=>rows.splice(0,rows.length,...items),normalizeAddress:v=>new URL(v).origin,select:async row=>{selections.push(row);if(window.fail)throw Error('连接失败');}};
+  });
+  await page.addScriptTag({path:resolve('client/ui/connections.js')});
+  assert.equal(await page.locator('#connection-profile-form').isVisible(),false);
+  assert.equal(await page.locator('#ssh-form').isVisible(),false);
+  await page.screenshot({path:'/tmp/cr-live-qa/computers-empty.png'});
+  await page.locator('#add-computer').click();assert.equal(await page.locator('#add-computer-dialog').isVisible(),true);
+  await page.locator('#add-computer-close').click();
+  await page.evaluate(()=>{Runtime.saveProfiles([{id:'computer-one',name:'办公室 Mac',address:'http://100.64.1.2:8787'},{id:'computer-two',name:'家里的电脑',address:'http://100.64.1.3:8787'}]);window.dispatchEvent(new Event('cr-profiles-changed'));});
+  assert.equal(await page.locator('#connections-list .connection-card').count(),2);
+  assert.equal(await page.getByRole('button',{name:'编辑 办公室 Mac',exact:true}).isVisible(),false);
+  await page.locator('.connections-header [data-connections]').click();
+  assert.equal(await page.locator('#computer-switcher .computer-option').count(),2);
+  assert.equal(await page.evaluate(()=>selections.length),0);
+  await page.keyboard.press('Escape');assert.equal(await page.locator('#computer-switcher').isVisible(),false);
+  await page.waitForFunction(()=>document.querySelector('.connections-header [data-connections]').getAttribute('aria-expanded')==='false');
+  await page.locator('.connections-header [data-connections]').click();await page.mouse.click(1000,700);assert.equal(await page.locator('#computer-switcher').isVisible(),false);
+  await page.evaluate(()=>{Runtime.profile=Runtime.profiles()[0];Runtime.hasConnection=true;document.getElementById('connections-screen').hidden=true;document.getElementById('app').hidden=false;});
+  await page.locator('.brand [data-connections]').click();
+  assert.equal(await page.locator('.computer-option[aria-current="true"]').count(),1);
+  await page.locator('.computer-option[aria-current="true"]').click();assert.equal(await page.evaluate(()=>selections.length),0);
+  await page.locator('.brand [data-connections]').click();await page.locator('.computer-option').nth(1).click();
+  assert.equal(await page.evaluate(()=>selections.at(-1).id),'computer-two');
+  await page.locator('#computer-switcher-close').click();
+  await page.setViewportSize({width:390,height:844});
+  await page.evaluate(()=>{document.body.classList.add('detail');document.getElementById('conversation').hidden=false;document.getElementById('welcome').hidden=true;});
+  await page.locator('.reader-header [data-connections]').click();
+  const box=await page.locator('#computer-switcher').boundingBox();assert.ok(box.x>=0&&box.x+box.width<=390);
+  await page.screenshot({path:'/tmp/cr-live-qa/computer-switcher-mobile.png'});
+  await page.locator('#computer-switcher-add').click();assert.equal(await page.locator('#add-computer-dialog').isVisible(),true);
+  await page.locator('#add-computer-close').click();
+  await page.locator('.reader-header [data-connections]').click();
+  const selectedCount=await page.evaluate(()=>selections.length);
+  page.once('dialog',dialog=>dialog.dismiss());await page.locator('#computer-switcher-list [aria-label="删除 家里的电脑"]').click();
+  assert.equal(await page.evaluate(()=>Runtime.profiles().length),2);
+  page.once('dialog',dialog=>dialog.accept());await page.locator('#computer-switcher-list [aria-label="删除 家里的电脑"]').click();
+  await page.waitForFunction(()=>Runtime.profiles().length===1);
+  assert.equal(await page.evaluate(()=>selections.length),selectedCount);
+  assert.equal(await page.locator('#connections-list .connection-card').count(),1);
+  page.once('dialog',dialog=>dialog.accept());await page.locator('#computer-switcher-list [aria-label="删除 办公室 Mac"]').click();
+  await page.waitForFunction(()=>selections.at(-1)===null);
+  assert.equal(await page.evaluate(()=>Runtime.profiles().length),0);
+  assert.deepEqual(errors,[]);console.log('Minimal home, add dialog, desktop/mobile switching, current device, Escape and outside dismissal passed');
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

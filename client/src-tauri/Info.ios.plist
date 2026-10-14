@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>NSLocalNetworkUsageDescription</key><string>连接你选择的电脑，查看聊天并发送消息和图片。</string>
+  <key>NSPhotoLibraryUsageDescription</key><string>选择要发送给电脑上 Codex 的图片。</string>
+</dict></plist>

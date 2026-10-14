@@ -1,0 +1,62 @@
+[package]
+name = "codex-remote-client"
+version = "1.0.0"
+description = "Multi-machine Codex Remote client"
+edition = "2021"
+
+[lib]
+name = "codex_remote_client_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+cc = "1"
+serde_json = "1"
+sha2 = "0.10"
+tauri-build = { version = "2", features = [] }
+
+[features]
+default = []
+desktop-direct = ["ssh-deploy", "system-discovery", "local-service"]
+local-service = []
+ssh-deploy = ["dep:ssh2", "dep:zeroize", "dep:sha2"]
+system-discovery = []
+appstore = []
+embedded-tailscale = ["dep:socks", "system-discovery"]
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+reqwest = { version = "0.12", default-features = false, features = ["cookies", "stream", "blocking", "json", "socks"] }
+tokio = { version = "1", features = ["sync", "time", "macros"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+futures-util = "0.3"
+base64 = "0.22"
+url = "2"
+x509-parser = "0.18"
+ssh2 = { version = "0.9", features = ["vendored-openssl"], optional = true }
+zeroize = { version = "1", optional = true }
+
+serde_json = "1"
+
+socks = { version = "0.3", optional = true }
+
+fs2 = "0.4"
+
+[dev-dependencies]
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rcgen = "0.13"
+tempfile = "3"
+
+[target.'cfg(target_vendor = "apple")'.dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["native-tls"] }
+native-tls = "=0.2.18"
+sha2 = { version = "0.10", optional = true }
+
+[target.'cfg(not(target_vendor = "apple"))'.dependencies]
+sha2 = "0.10"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+
+[patch.crates-io]
+native-tls = { path = "vendor/native-tls" }

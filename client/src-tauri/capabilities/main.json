@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Only the bundled main UI can call native commands. No remote webview origins.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

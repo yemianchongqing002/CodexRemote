@@ -1,0 +1,58 @@
+# Build outputs and release packages
+/bin/
+/dist/
+/codex-remote
+/codex-remote.exe
+/codex-remote-*.zip
+/codex-remote-*.tar.gz
+*.test
+*.test.exe
+
+# Local runtime state (never distribute tokens or queued messages)
+/.local/
+/token
+/outbox.jsonl
+/outbox.jsonl.queue/
+/.config/codex-remote/
+*.pid
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Development dependencies and test output
+node_modules/
+/client/src-tauri/target/
+/client/src-tauri/gen/
+__pycache__/
+*.py[cod]
+/playwright-report/
+/test-results/
+coverage.out
+coverage.*.out
+*.log
+
+# macOS metadata
+.DS_Store
+
+# Server payloads generated for native SSH deployment
+/client/src-tauri/server-bundles/windows-*/
+/client/src-tauri/server-bundles/darwin-*/
+
+# Client renderers are generated from the server vendor assets
+/client/ui/vendor/
+
+# Shared native helper build output
+/client/src-tauri/local-service-bundle/
+
+# Private signing and local account material
+*.p12
+*.pfx
+*.key
+*.mobileprovision
+*.provisionprofile
+*.xcarchive/
+*.ipa
+*.pkg
+auth.json
+.DS_Store

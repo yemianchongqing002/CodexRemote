@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#101716">
+  <meta name="color-scheme" content="dark">
+  <title>Codex Remote · 聊天</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/vendor/marked/marked.umd.js" defer></script>
+  <script src="/vendor/dompurify/purify.min.js" defer></script>
+  <script src="/runtime.js" defer></script>
+  <script src="/rich.js" defer></script>
+  <script src="/models.js" defer></script>
+  <script src="/live.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <section id="login" class="login" hidden>
+    <form id="login-form" class="login-card">
+      <span class="brand-mark" aria-hidden="true">C<span>↗</span></span>
+      <p class="eyebrow">CODEX REMOTE</p>
+      <h1>你的电脑，<br>随手可读。</h1>
+      <p class="muted">输入电脑上保存的访问口令，查看聊天。</p>
+      <label for="token">访问口令</label>
+      <input id="token" name="token" type="password" autocomplete="current-password" required maxlength="256" placeholder="粘贴访问口令">
+      <button type="submit" class="primary">连接电脑 <span aria-hidden="true">↗</span></button>
+      <p id="login-error" class="error" role="alert"></p>
+
+      <p class="fine">连接自己的电脑 · 聊天留在本机</p>
+    </form>
+  </section>
+
+  <div id="app" class="shell" hidden>
+    <aside id="sidebar" class="sidebar" aria-label="聊天列表">
+      <header class="brand"><span class="brand-mark small" aria-hidden="true">C<span>↗</span></span><div class="connection-brand"><strong id="connection-name">Codex Remote</strong><span id="connection-address" class="fine"></span></div><span class="read-only">只读</span></header>
+      <div class="connection"><span id="dot" class="dot"></span><span id="connection-label" role="status">正在连接</span></div>
+      <div class="controls">
+        <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="查找聊天" aria-label="按标题或项目查找聊天" autocomplete="off"></label>
+        <div class="list-toolbar"><h2>聊天记录 <span id="thread-count">0</span></h2><label class="archive"><input id="archive" type="checkbox">已归档</label></div>
+      </div>
+      <nav id="threads" class="thread-list" aria-label="选择聊天"></nav>
+      <p id="list-empty" class="empty-note" hidden>这里还没有聊天。<br>在电脑上开始一段 Codex 对话后刷新。</p>
+      <footer class="sidebar-footer">
+        <div class="footer-actions"><button id="refresh" type="button">↻ 刷新</button><button type="button" data-open-settings aria-haspopup="dialog" aria-controls="settings-dialog">设置</button><button id="logout" type="button" class="quiet">断开</button></div>
+
+      </footer>
+    </aside>
+
+    <main id="reader" class="reader">
+      <div id="welcome" class="welcome"><span class="welcome-symbol" aria-hidden="true">↗</span><h1>接着看，慢慢读。</h1><p>选择一段电脑上的聊天。<br>新消息会在保存后出现在这里。</p><span class="fine">无需让手机保持常亮</span></div>
+      <section id="conversation" class="conversation" hidden aria-label="聊天内容">
+        <header class="reader-header"><button id="back" type="button" class="back" aria-label="返回聊天列表">‹</button><div class="reader-heading"><span id="reader-connection-name" class="reader-connection-name"></span><h1 id="chat-title"></h1><p id="chat-meta"></p></div><button type="button" class="reader-settings" data-open-settings aria-haspopup="dialog" aria-controls="settings-dialog">设置</button><button id="chat-refresh" type="button" aria-label="刷新此聊天">↻</button></header>
+        <div id="scroll" class="scroll">
+          <div class="history-bar"><button id="older" type="button" hidden>加载更早消息</button></div>
+          <p id="limit-note" class="notice" hidden>为节省资源，仅保留部分文字历史；完整内容请在电脑查看。</p>
+          <div id="messages" class="messages" aria-label="消息"></div>
+          <p id="message-empty" class="empty-note" hidden>暂时没有已保存的文字消息。</p>
+        </div>
+        <form id="composer" class="composer" hidden>
+          <div id="approval-panel" class="approval-panel" hidden aria-label="等待批准"></div>
+          <div class="live-status"><span id="live-status" class="fine" role="status"></span><button id="live-refresh" type="button">刷新审批与权限</button></div>
+          <div id="queue-status" class="queue-status" hidden></div>
+          <div id="image-drafts" class="image-drafts" aria-label="待发送图片" hidden></div>
+          <input id="image-picker" type="file" multiple hidden>
+          <div class="compose-row"><textarea id="prompt" rows="1" placeholder="给电脑上的 Codex 发消息…" aria-label="发送到这个聊天" aria-describedby="send-note"></textarea><button id="stop-turn" type="button" hidden aria-label="停止回答" title="停止当前回答">■</button><button id="send" type="submit" aria-label="发送消息，默认排队" title="发送（默认排队）">发送</button></div>
+          <div class="composer-tools"><div class="image-toolbar"><button id="add-images" type="button" aria-label="添加图片或文件" title="添加图片或文件（最多 4 个，每个 8 MiB）">＋</button><span id="image-note" class="fine" role="status" hidden></span></div><button id="model-picker-open" type="button" aria-haspopup="dialog" aria-controls="model-dialog" title="设置当前聊天下一轮的模型">模型待同步 <span aria-hidden="true">⌄</span></button></div>
+
+          <div id="send-status" class="send-status" hidden><span id="send-note" role="status"></span><button id="check-send" type="button" hidden>查询送达状态</button><button id="dismiss-send" type="button" hidden>已核对，关闭提示</button></div>
+        </form>
+        <div class="reader-footer"><span id="sync-label" role="status">已保存的消息</span><button id="latest" type="button" hidden>↓ 回到最新</button></div>
+      </section>
+    </main>
+    <div id="error" class="toast" role="alert" hidden></div>
+  </div>
+  <noscript>请启用 JavaScript 以连接电脑并查看聊天。</noscript>
+  <dialog id="model-dialog" class="model-dialog" aria-labelledby="model-title">
+    <header class="model-picker-header"><button id="model-fast" type="button" aria-label="Fast 模式" aria-pressed="false" title="Fast 模式">ϟ</button><strong id="model-title">模型设置</strong><button id="model-reset" type="button" aria-label="恢复所选模型的默认设置" title="恢复所选模型的默认设置">↺</button><button id="model-close" type="button" aria-label="关闭模型设置">×</button></header>
+    <label class="fine" for="model-select">目标电脑的可用模型</label>
+    <select id="model-select" aria-label="选择模型"></select>
+    <div class="model-effort-heading"><span>思考深度</span><strong id="model-effort-name">—</strong></div>
+    <div id="model-efforts" class="model-efforts" role="group" aria-label="思考深度"></div>
+    <p id="model-description" class="fine"></p>
+    <p id="model-fast-note" class="fine"></p>
+    <p id="model-note" class="fine" role="status"></p>
+    <section class="permission-settings" aria-label="会话权限">
+      <label for="permission-select">会话访问权限</label>
+      <p id="permission-current" class="fine" role="status">正在读取桌面状态…</p>
+      <select id="permission-select"><option value="">选择权限设置</option><option value="read-only">只读</option><option value="auto">请求批准</option><option value="guardian-approvals">帮我批准</option><option value="full-access">完全访问</option></select>
+      <p id="permission-description" class="fine">修改当前会话的后续轮次设置。</p>
+      <button id="permission-apply" type="button" disabled>应用权限设置</button>
+      <p id="permission-note" class="fine" role="status"></p>
+    </section>
+    <footer class="model-picker-actions"><button id="model-retry" type="button">重新读取</button></footer>
+  </dialog>
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <header class="settings-header"><h2 id="settings-title">设置</h2><button id="settings-close" type="button" aria-label="关闭设置" autofocus>×</button></header>
+    <div class="settings-fields">
+      <div id="connection-settings" class="settings-fields">
+      <label for="connection-name-input">连接名称</label>
+      <div class="connection-name-edit"><input id="connection-name-input" type="text" maxlength="96" autocomplete="off" placeholder="使用电脑名称"><button id="connection-name-save" type="button">保存</button><button id="connection-name-reset" type="button">恢复</button></div>
+      <p id="connection-identity" class="fine"></p>
+      <p id="connection-name-help" class="fine">此处修改仅保存在当前浏览器。清空后保存或点击“恢复”，使用电脑名称。</p>
+      <div id="guardian-controls" hidden><button id="guardian-status" type="button">检查服务</button> <button id="guardian-restart" type="button">重启服务</button><p id="guardian-note" class="fine" role="status">服务和守护进程互相检查，连接中断时请等待自动恢复。</p></div>
+      </div>
+      <label for="send-shortcut">发送快捷键</label>
+      <select id="send-shortcut"><option value="enter">回车发送</option><option value="ctrl-enter">Control + 回车发送</option></select>
+      <p id="send-shortcut-hint" class="fine">Shift + 回车换行</p>
+      <label for="mode">更新方式</label>
+      <select id="mode"><option value="auto">自动 · 仅前台</option><option value="manual">手动 · 更省电</option></select>
+      <p class="fine">自动更新在页面进入后台后暂停。</p>
+      <label for="open-position">打开会话</label>
+      <select id="open-position"><option value="latest">跳到最新消息</option><option value="remember">恢复阅读位置</option></select>
+      <p id="input-settings-note" class="fine" role="status">修改立即生效，仅保存在当前浏览器。</p>
+    </div>
+  </dialog>
+  <dialog id="create-dialog">
+    <form id="create-form">
+      <h2>新建会话</h2><p id="create-project" class="fine"></p>
+      <label for="create-prompt">第一条消息</label>
+      <textarea id="create-prompt" rows="4" required placeholder="让 Codex 在这个项目中做什么？"></textarea>
+      <p id="create-note" class="fine" role="status">使用电脑的默认配置，在该项目目录开始。</p>
+      <div class="create-actions"><button id="create-close" type="button">关闭</button><button id="create-submit" type="submit">创建并发送</button></div>
+      <button id="create-dismiss" type="button" hidden>已核对，清除创建提示</button>
+      <button id="create-check" type="button" hidden>查询创建结果</button>
+    </form>
+  </dialog>
+</body>
+</html>

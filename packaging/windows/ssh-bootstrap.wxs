@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" Name="Codex Remote SSH Setup" Language="1033" Version="0.1.0" Manufacturer="Codex Remote" UpgradeCode="E21A4D6F-B316-4D3A-B3B7-C9F9EC9686B5">
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Description="Enable Windows OpenSSH for Codex Remote deployment"/>
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Codex Remote SSH Setup is already installed."/>
+    <Media Id="1" Cabinet="ssh-setup.cab" EmbedCab="yes"/>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLDIR" Name="CodexRemoteSSHSetup">
+          <Component Id="SSHSetupComponent" Guid="DFA6C89F-7358-442F-AEBA-B9115073E9D1" Win64="yes">
+            <File Id="SSHSetupExe" Name="codex-remote.exe" Source="$(var.BinaryPath)" KeyPath="yes"/>
+          </Component>
+        </Directory>
+      </Directory>
+    </Directory>
+    <Feature Id="SSHSetup" Title="Enable OpenSSH Server" Level="1">
+      <ComponentRef Id="SSHSetupComponent"/>
+    </Feature>
+    <CustomAction Id="EnableSSH" FileKey="SSHSetupExe" ExeCommand="--enable-ssh" Execute="deferred" Impersonate="no" Return="check"/>
+    <InstallExecuteSequence>
+      <Custom Action="EnableSSH" After="InstallFiles">NOT Installed AND NOT REMOVE</Custom>
+    </InstallExecuteSequence>
+  </Product>
+</Wix>

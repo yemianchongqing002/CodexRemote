@@ -1,0 +1,10 @@
+# Optional: copy to ../.local/macos-startup.conf and adjust absolute paths.
+# This is a Bash configuration file; quote values containing spaces.
+# REMOTE_BINARY='/Users/yourname/Applications/codex-remote/codex-remote'
+# TAILSCALE_BINARY='/Applications/Tailscale.app/Contents/MacOS/Tailscale'
+# REMOTE_CODEX_HOME="$HOME/.codex"
+# REMOTE_TOKEN_FILE="$HOME/.config/codex-remote/token"
+# REMOTE_PORT=8787
+# REMOTE_ALLOW_HOST='your-mac.your-tailnet.ts.net'
+# REMOTE_IPC_SOCKET="$HOME/.codex/ipc/ipc.sock"
+# REMOTE_CODEX_BINARY='/Applications/Codex.app/Contents/Resources/codex'
